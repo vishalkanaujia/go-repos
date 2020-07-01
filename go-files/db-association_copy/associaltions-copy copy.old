@@ -1,0 +1,318 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/lib/pq"
+)
+
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "postgres"
+	password = ""
+	dbname   = "guru"
+)
+type EventTitle struct {
+	EnTitle string `json:"en"`
+	EsTitle string `json:"es"`
+	EventID uint // Foreign key
+}
+
+type Event struct {
+	ID       int64  `sql:"auto_increment" json:"-"`
+    EID string `json:"id"`
+	Enabled bool `json:"enabled"`
+	Titles EventTitle `json:"titles"`
+	GroupID uint // Foreign key
+}
+
+type GroupTitle struct {
+	EnTitle string `json:"en"`
+	GroupID uint // Foreign key
+}
+
+type Group struct {
+  ID uint `sql:"auto_increment" json:"-"`
+  GID string `json:"id"`
+  Titles GroupTitle `json:"titles"`
+  Events []Event `json:"events"`
+  ChannelID uint // Foreign key
+}
+
+type ChannelTitle struct {
+	EnTitle string `json:"en"`
+    ChannelID uint // Foreign key
+}
+
+type Channel struct {
+	ID     int64  `sql:"auto_increment" json:"-"`
+	ChanID string `json:"id"`
+	ChannelTitles ChannelTitle `json:"titles"`
+	Groups []Group `json:"groups"`
+    SettingID uint
+}
+
+type Setting struct {
+	ID      int64     `sql:"auto_increment" json:"-"`
+	Channel []Channel `json:"channels"`
+}
+
+type AllSettings struct {
+	ID      int64     `sql:"auto_increment" json:"-"`
+    Settings postgres.Jsonb `json:"settings"`
+}
+
+func main() {
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+
+	db, err := gorm.Open("postgres", psqlInfo)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	// Create
+	//db.Create(&Shelf{
+	
+		record := `{
+				"channels": [
+					{
+						"id": "2nc",
+						"titles": {
+							
+							"en": "i am not"
+						}
+					}
+				]
+			  }`
+	
+	
+	/*
+	setting := Setting{
+		Channel: []Channel{
+			{
+				ChannelTitles: []ChannelTitle {
+					{
+					Language: "en",
+					Text:     "I am Bond",
+					},
+				},
+			},
+		},
+	}
+	*/
+
+	record = `{
+		"channels": [
+			{
+				"id": "1nc",
+				"titles": {
+					"en": "Push Notifications",
+					"es": "Notificaciones automáticas",
+					"fr": "Notifications push",
+					"ja": "プッシュ通知",
+					"ko": "푸쉬 알림",
+					"pt": "Notificações Push",
+					"zh": "推送通知",
+					"zt": "推送通知"
+				},
+				"type": "notification_channel",
+				"communication_mode": "push",
+				"enabled": true,
+				"groups": [
+					{
+						"id": "1ng",
+						"titles": {
+							"en": "TV/Movies",
+							"es": "TV/Películas",
+							"fr": "Télévision / films",
+							"ja": "テレビ/映画",
+							"ko": "TV/영화",
+							"pt": "Televisão/Filmes",
+							"zh": "电视／电影",
+							"zt": "電視／電影"
+						},
+						"descriptions": {
+							"en": "TV/Movies Description"
+						},
+						"type": "notification_group",
+						"enabled": true,
+						"events": [
+							{
+								"id": "1ne",
+								"titles": {
+									"en": "New Episode",
+									"es": "Nuevo Episodio",
+									"fr": "Nouvel épisode",
+									"ja": "新しいエピソード",
+									"ko": "새로운 에피소드",
+									"pt": "Novo episódio",
+									"zh": "新的剧集",
+									"zt": "新劇集"
+								},
+								"descriptions": {
+									"en": "Get notified when we add new episodes for shows you're following.",
+									"es": "Recibe notificación de nuevos episodios disponibles de los shows que estás siguiendo.",
+									"fr": "Soyez notifié quand nous ajoutons de nouveaux épisodes aux séries que vous suivez.",
+									"ja": "あなたがフォローしている番組に、新しいエピソードが追加された時に通知を受け取>ります。",
+									"ko": "팔로잉 중인 방송의 새로운 에피소드가 추가되면 알림을 받습니다.",
+									"pt": "Seja notificado quando adicionarmos novos episódios para os programas que você está seguindo.",
+									"zh": "您关注的节目有剧集更新时，我们将通知您。",
+									"zt": "在我們為您正在追蹤的節目添加新劇集>時收到通知。"
+								},
+								"type": "notification_event",
+								"enabled": true
+							},
+							{
+								"id": "2ne",
+								"titles": {
+									"en": "Subtitle Available",
+									"es": "Subtítulo Disponible",
+									"fr": "Disponibilité du sous-titrage",
+									"ja": "字幕が利用できます",
+									"ko": "자막 이용 가능",
+									"pt": "Legenda Disponível",
+									"zh": ">有字幕可用",
+									"zt": "有字幕可用"
+								},
+								"descriptions": {
+									"en": "Get notified when episodes (for shows you're following) reach 90% subtitle completion. You can change your preferred subtitle language under Account settings.",
+									"es": "Recibe notificación cuando los  subtitulos de episodios (de shows que estás siguiendo) lleguen a 90%. Puedes cambiar el idioma de subtítulos en Configuración de la Cuenta.",
+									"fr": "Soyez notifié quand le sous-titrage des épisodes (pour les séries que vous suivez) est réalisé à 90 %. Vous pouvez changer votre préférence de langue de sous-titrage dans les paramètres du compte.",
+									"ja": "あなたがフォローしている番組のエピソードがの字幕完成率が、90％に達したときに通知を受け取ります。 アカウントの設定で、お好みの字幕言語を変更することができます。",
+									"ko": "(팔로잉 중인 방송의) 자막이 90% 완료되면 알림을 받습니다. 아래 계정 설정에서 선호 자막을 변경할 수 있습니다.",
+									"pt": "Seja notificado quando episódios (de programas que você está seguindo) chegarem a 90% de conclusão da legenda. Você pode alterar o seu idioma de legenda preferido em Configurações da conta.",
+									"zh": "您关注的节目字幕90%完成的时候，我们将通知您。您可以在帐号设定项下，改变您偏爱的字幕语言。",
+									"zt": "在劇集（對於您正在追蹤的節目）字幕完成達 90% 時收到通知。您可以在帳號設定項下，改變您偏愛的字幕語言。"
+								},
+								"type": "notification_event",
+								"enabled": true
+							}
+						]
+					},
+					{
+						"id": "2ng",
+						"titles": {
+							"en": "Special Offers",
+							"es": "Ofertas especiales",
+							"fr": "Offres spéciales",
+							"ko": "특가 행사",
+							"pt": "Ofertas Especiais",
+							"zh": "特别优惠",
+							"zt": "特別優惠"
+						},
+						"descriptions": {
+							"en": "Special Offers"
+						},
+						"type": "notification_group",
+						"enabled": true,
+						"events": [
+							{
+								"id": "3ne",
+								"titles": {
+									"en": "Discounts and Recommendations",
+									"es": "Descuentos y recomendaciones",
+									"fr": "Réductions et recommandations",
+									"ko": "할인 및 추천",
+									"pt": "Descontos e Sugestões",
+									"zh": "折扣和推荐",
+									"zt": "特別優惠"
+								},
+								"descriptions": {
+									"en": "Get notified when special offers are available, as well as recommendations based on the content you watch.",
+									"es": "Recibe notificaciones cuando haya ofertas especiales disponibles, así como recomendaciones basadas en el contenido que ves.",
+									"fr": "Recevez des notifications lorsque des offres spéciales sont disponibles ainsi que des recommandations se basant sur le contenu que vous regardez.",
+									"ko": "시청하시는 콘텐츠를 기반으로 이용 가능한 특가 행사 알림 및 추천을 받으실 수 있습니다.",
+									"pt": "Receba notificações quando ofertas especiais estiverem disponíveis, assim como sugestões com base no conteúdo que você assiste.",
+									"zh": "当有特别优惠时会受到通知，并且会根据您观看的内容获得相应的推荐。",
+									"zt": "當有特別優惠時接收通知，並根據您觀看的內容提供建議。"
+								},
+								"type": "notification_event",
+								"enabled": true
+							}
+						]
+					}
+				]
+			}
+		]
+	}`
+
+	push := `{
+		"en": {
+		  "new_video": {
+			"movie": {
+			  "title": "%{container_title}",
+			  description: "Available now!"
+			},
+			episode: {
+			  "title": "%{container_title}",
+			  "description": "Episode %{number}: Available now!"
+			}
+		  }
+		}
+	  }`
+
+	var setting Setting
+	err = json.Unmarshal([]byte(record), &setting)
+	fmt.Printf("err=%v\n", err)
+
+	db.DropTableIfExists(&Setting{})
+	db.DropTableIfExists(&Channel{})
+	db.DropTableIfExists(&ChannelTitle{})
+
+	// Migrate the schema
+	db.AutoMigrate(&Setting{})
+	db.AutoMigrate(&Channel{})
+	db.AutoMigrate(&ChannelTitle{})
+	db.AutoMigrate(&Group{})
+	db.AutoMigrate(&GroupTitle{})
+	db.AutoMigrate(&Event{})
+	db.AutoMigrate(&EventTitle{})
+	db.AutoMigrate(&AllSettings{})
+
+	db.Create(&setting)
+/*
+	//db.Preload("Groups").Where("id = ?", 1).Find(&outSetting)
+	//fmt.Printf("shelf=%v\n", outSetting)
+	query := db.Preload("Channel").Preload("Channel.Groups").Preload("Channel.Groups.Titles").Preload("Channel.Groups.Events").Preload("Channel.Groups.Events.Titles")
+	var outSetting []Setting
+	
+	err = query.Find(&outSetting).Error
+    if err != nil {
+        fmt.Printf("Find err:%s\n", err)
+	}
+
+	for _, setting := range outSetting {
+		//db.Model(outSetting[i]).Related(&outSetting[i].Channel)
+		//fmt.Printf("Setting=%v\n", setting)
+        for _, channel := range setting.Channel {
+			for _, group := range channel.Groups {
+				for _, event := range group.Events {
+                    fmt.Printf("Event=%v\n", event)
+				}
+			}
+		}
+	}
+	//fmt.Printf("final shelf=%v\n", outSetting)
+*/
+
+	var as AllSettings
+	as = AllSettings{
+		Settings: postgres.Jsonb{json.RawMessage(push)},
+	}
+
+	db.Create(&as)
+
+	var as1 AllSettings
+	db.Find(&as1)
+	a, err := json.Marshal(as1)
+	n := len(a)   //Find the length of the byte array
+    s := string(a[:n]) //convert to string
+    fmt.Println(s) //write to response
+}

@@ -1,0 +1,16 @@
+def Divider(a_list): # returns a string
+    splitter(a_list, 0, len(a_list) - 1)
+
+def splitter(a_list, left, right):
+    if left == right:
+        return a_list[left]
+    
+    mid = (left + right)/2
+
+    str1 = splitter(a_list, left, mid)
+    str2 = splitter(a_list, mid+1, right)
+    
+    # process actually does the work.
+    result = process(str1, str2)
+    
+    return result
